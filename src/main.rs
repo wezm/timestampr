@@ -11,6 +11,10 @@ fn main() -> ExitCode {
     let cmd = env::args().nth(1);
     let res = match cmd.as_deref() {
         Some("start") => start(),
+        Some("help") | Some("-h") => {
+            usage();
+            return ExitCode::SUCCESS;
+        }
         Some(name) => {
             eprintln!("Unknown command: {}", name);
             usage();
