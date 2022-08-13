@@ -63,13 +63,14 @@ fn add_entry(
     timestamp: OffsetDateTime,
     duration: Duration,
 ) -> Result<(), Box<dyn Error>> {
+    let seconds = duration.whole_seconds().unsigned_abs();
     writeln!(
         &mut file,
         "{}\t{:02}:{:02}:{:02}",
         timestamp.format(&Rfc2822)?,
-        duration.whole_hours(),
-        duration.whole_minutes(),
-        duration.whole_seconds()
+        seconds / 3_600 % 24,
+        seconds / 60 % 60,
+        seconds % 60
     )?;
     Ok(())
 }
