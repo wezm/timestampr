@@ -2,7 +2,7 @@ use std::env;
 use std::error::Error;
 use std::fs::File;
 use std::io::{Read, Seek, SeekFrom, Write};
-use std::process::ExitCode;
+use std::process::{Command, ExitCode};
 
 use time::format_description::well_known::Rfc2822;
 use time::{Duration, OffsetDateTime};
@@ -31,7 +31,8 @@ fn main() -> ExitCode {
 fn start() -> Result<(), Box<dyn Error>> {
     let mut file = open_file()?;
     file.seek(SeekFrom::End(0))?;
-    add_entry(file, OffsetDateTime::now_local()?, Duration::ZERO)
+    add_entry(file, OffsetDateTime::now_local()?, Duration::ZERO)?;
+    notify("Added start timestamp")
 }
 
 fn timestamp() -> Result<(), Box<dyn Error>> {
@@ -53,7 +54,8 @@ fn timestamp() -> Result<(), Box<dyn Error>> {
     }
 
     file.seek(SeekFrom::End(0))?;
-    add_entry(file, now, duration)
+    add_entry(file, now, duration)?;
+    notify("Added timestamp")
 }
 
 fn add_entry(
@@ -73,7 +75,25 @@ fn add_entry(
 }
 
 fn usage() {
-    todo!()
+    println!(
+        r#"Usage: timestampr [cmd]
+
+Writes a tab-separated timestamp and duration to ~/Documents/timestamps.tsv
+A notification is shown when an entry is added successfully via `notify-send`.
+
+COMMANDS:
+
+start      Add a new entry with the duration set to 00:00:00
+
+[default]  If no command is supplied the default behaviour is to append a
+           new timestamp to the file with the duration since the start
+           entry. I.e. the last entry with duration 00:00:00
+
+FILES:
+
+        ~/Documents/timestamps.tsv      Where the records are written
+"#
+    )
 }
 
 fn open_file() -> Result<File, Box<dyn Error>> {
@@ -90,4 +110,16 @@ fn open_file() -> Result<File, Box<dyn Error>> {
         .create(true)
         .open(&path)?;
     Ok(file)
+}
+
+fn notify(message: &str) -> Result<(), Box<dyn Error>> {
+    let _status = Command::new("notify-send")
+        .args(&[
+            "-i",
+            "/usr/share/icons/Adwaita/64x64/legacy/preferences-system-time-symbolic.symbolic.png",
+            "Timestampr",
+            message,
+        ])
+        .status()?;
+    Ok(())
 }
